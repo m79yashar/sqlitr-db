@@ -1,14 +1,23 @@
 // import './assets/main.css'
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+import { createApp } from "vue";
+import { createPinia } from "pinia";
 
-import App from './App.vue'
-import router from './router'
+import App from "./App.vue";
+import router from "./router";
 
-const app = createApp(App)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/app/sw.js", { scope: "/app/" })
+      .then((reg) => console.log("SW registered with scope:", reg.scope))
+      .catch((err) => console.error("SW registration failed:", err));
+  });
+}
 
-app.use(createPinia())
-app.use(router)
+const app = createApp(App);
 
-app.mount('#app')
+app.use(createPinia());
+app.use(router);
+
+app.mount("#app");
