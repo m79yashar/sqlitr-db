@@ -21,7 +21,7 @@ const customInvoice = [
   {
     InvoiceId: 1,
     CustomerId: 2,
-    InvoiceDate: "2007-01-01 00:00:00",
+    InvoiceDate: "2007-01-01 00:00:01",
     BillingAddress: "Theodor-Heuss-Straße 34",
     BillingCity: "Stuttgart",
     BillingState: null,
