@@ -76,7 +76,9 @@ const customInvoice = [
 ];
 onMounted(async () => {
   await importDatabaseFromServer(
-    "https://raw.githubusercontent.com/m79yashar/sqlitr-db/refs/heads/main/chinook.enc.txt"
+    "https://raw.githubusercontent.com/m79yashar/sqlitr-db/refs/heads/master/Chinook_part1.sqlite"
+
+    // "https://raw.githubusercontent.com/m79yashar/sqlitr-db/refs/heads/main/chinook.enc.txt"
     // 'https://raw.githubusercontent.com/eltechno/python_course/master/Chinook.sqlite'
   );
   // artists.value = await getArtists(300)
