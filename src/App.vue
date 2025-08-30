@@ -3,16 +3,17 @@ import { ref, onMounted } from "vue";
 // import { exportEncryptedDB } from '@/services/dbService'
 import {
   importDatabaseFromServer,
-  getArtists,
-  addArtist,
-  updateArtist,
-  deleteArtist,
+  deleteInvoice,
   syncWithServer,
   getInvoices,
+  addInvoice,
+  updateInvoice   
 } from "@/services/dbService";
 
 const artists = ref([]);
 const invoices = ref([]);
+
+const isAdd = ref(false);
 
 const newArtistName = ref("");
 const editArtistName = ref("");
@@ -86,30 +87,58 @@ onMounted(async () => {
   await syncWithServer("https://raw.githubusercontent.com/m79yashar/sqlitr-db/refs/heads/main/");
 });
 
+const formData = ref({
+  // InvoiceId: null,
+  CustomerId: null,
+  InvoiceDate: null,
+  BillingAddress: null,
+  BillingCity: null,
+  BillingState: null,
+  BillingCountry: null,
+  BillingPostalCode: null,
+  Total: null,
+});
+
 async function add() {
-  if (!newArtistName.value.trim()) return;
-  await addArtist(newArtistName.value.trim());
-  newArtistName.value = "";
-  artists.value = await getArtists(300);
+  await addInvoice(formData.value);
+  formData.value = {
+    // InvoiceId: null,
+    CustomerId: null,
+    InvoiceDate: null,
+    BillingAddress: null,
+    BillingCity: null,
+    BillingState: null,
+    BillingCountry: null,
+    BillingPostalCode: null,
+    Total: null,
+  };
+  invoices.value = await getInvoices();
+  isAdd.value = false;
 }
 
-function selectForEdit(artist) {
-  selectedArtistId.value = artist.id;
-  editArtistName.value = artist.name;
-}
+const selectedforEdit = ref(null);
+const isEdite = ref(false);
 
 async function update() {
-  if (!selectedArtistId.value || !editArtistName.value.trim()) return;
-  await updateArtist(selectedArtistId.value, editArtistName.value.trim());
-  selectedArtistId.value = null;
-  editArtistName.value = "";
-  artists.value = await getArtists(300);
+  await updateInvoice(selectedforEdit.value.InvoiceId, selectedforEdit.value);
+  selectedforEdit.value = null;
+  isEdite.value = false;
+  invoices.value = await getInvoices();
 }
+
+//     BillingCity: null,
+//     BillingState: null,
+//     BillingCountry: null,
+//     BillingPostalCode: null,
+//     Total: null,
+//   };
+//   
+// }
 
 async function remove(id) {
   if (!confirm("آیا مطمئن هستید که می‌خواهید حذف کنید؟")) return;
-  await deleteArtist(id);
-  artists.value = await getArtists(300);
+  await deleteInvoice(id);
+  invoices.value = await getInvoices();
 }
 
 // function downloadEncrypted() {
@@ -141,7 +170,47 @@ async function remove(id) {
 
     <table>
       <caption>
-        add new
+        <button v-if="!isAdd" @click="isAdd = true" style="margin-bottom: 10px">add new</button>
+        <button @click="syncInvoicesList(customInvoice)" style="margin-bottom: 10px">sync List</button>
+
+        <form v-if="isAdd" style="border: 1px solid; width: max-content; padding: 20px; margin-bottom: 10px;">
+          <label for="CustomerId">CustomerId: </label><br />
+          <input type="text" id="CustomerId" name="CustomerId" v-model="formData.CustomerId" /><br />
+          <label for="InvoiceDate">InvoiceDate: </label><br />
+          <input type="text" id="InvoiceDate" name="InvoiceDate" v-model="formData.InvoiceDate" /><br />
+          <label for="BillingAddress">BillingAddress: </label><br />
+          <input type="text" id="BillingAddress" name="BillingAddress" v-model="formData.BillingAddress" /><br />
+          <label for="BillingCity">BillingCity: </label><br />
+          <input type="text" id="BillingCity" name="BillingCity" v-model="formData.BillingCity" /><br />
+          <label for="BillingState">BillingState: </label><br />
+          <input type="text" id="BillingState" name="BillingState" v-model="formData.BillingState" /><br />
+          <label for="BillingCountry">BillingCountry: </label><br />
+          <input type="text" id="BillingCountry" name="BillingCountry" v-model="formData.BillingCountry" /><br />
+          <label for="BillingPostalCode">BillingPostalCode: </label><br />
+          <input type="text" id="BillingPostalCode" name="BillingPostalCode" v-model="formData.BillingPostalCode" /><br />
+          <label for="Total">Total: </label><br />
+          <input type="text" id="Total" name="Total" v-model="formData.Total" /><br /><br />
+          <input type="submit" value="Submit" @click="add"/>
+        </form>
+        <form v-if="isEdite" style="border: 1px solid; width: max-content; padding: 20px; margin-bottom: 10px;">
+          <label for="CustomerId">CustomerId: </label><br />
+          <input type="text" id="CustomerId" name="CustomerId" v-model="selectedforEdit.CustomerId" /><br />
+          <label for="InvoiceDate">InvoiceDate: </label><br />
+          <input type="text" id="InvoiceDate" name="InvoiceDate" v-model="selectedforEdit.InvoiceDate" /><br />
+          <label for="BillingAddress">BillingAddress: </label><br />
+          <input type="text" id="BillingAddress" name="BillingAddress" v-model="selectedforEdit.BillingAddress" /><br />
+          <label for="BillingCity">BillingCity: </label><br />
+          <input type="text" id="BillingCity" name="BillingCity" v-model="selectedforEdit.BillingCity" /><br />
+          <label for="BillingState">BillingState: </label><br />
+          <input type="text" id="BillingState" name="BillingState" v-model="selectedforEdit.BillingState" /><br />
+          <label for="BillingCountry">BillingCountry: </label><br />
+          <input type="text" id="BillingCountry" name="BillingCountry" v-model="selectedforEdit.BillingCountry" /><br />
+          <label for="BillingPostalCode">BillingPostalCode: </label><br />
+          <input type="text" id="BillingPostalCode" name="BillingPostalCode" v-model="selectedforEdit.BillingPostalCode" /><br />
+          <label for="Total">Total: </label><br />
+          <input type="text" id="Total" name="Total" v-model="selectedforEdit.Total" /><br /><br />
+          <input type="submit" value="Submit" @click="update"/>
+        </form>
       </caption>
       <thead>
         <tr>
@@ -173,7 +242,7 @@ async function remove(id) {
             <button @click="remove(item.InvoiceId)">حذف</button>
           </td>
           <td>
-            <button @click="selectForEdit(item)">ویرایش</button>
+            <button @click="selectedforEdit = { ...item }; isEdite = true">ویرایش</button>
           </td>
         </tr>
       </tbody>

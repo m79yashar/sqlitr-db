@@ -165,36 +165,73 @@ export async function getInvoices(limit = 415) {
   }
 }
 
-export async function addArtist(name) {
+export async function addInvoice(record) {
   if (!db) throw new Error("❌ Database not loaded yet");
 
   if (Capacitor.getPlatform() === "web") {
-    db.run(`INSERT INTO Artist (Name) VALUES (?)`, [name]);
+    db.run(
+      `INSERT INTO Invoice (CustomerId, InvoiceDate, BillingAddress, BillingCity, BillingState, BillingCountry, BillingPostalCode, Total)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        record.CustomerId,
+        record.InvoiceDate,
+        record.BillingAddress,
+        record.BillingCity,
+        record.BillingState,
+        record.BillingCountry,
+        record.BillingPostalCode,
+        record.Total,
+      ]
+    );
     await saveToIndexedDB(db.export());
   } else {
-    await db.run(`INSERT INTO Artist (Name) VALUES (?)`, [name]);
+    await db.run(
+      `INSERT INTO Invoice (CustomerId, InvoiceDate, BillingAddress, BillingCity, BillingState, BillingCountry, BillingPostalCode, Total)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        record.CustomerId,
+        record.InvoiceDate,
+        record.BillingAddress,
+        record.BillingCity,
+        record.BillingState,
+        record.BillingCountry,
+        record.BillingPostalCode,
+        record.Total,
+      ]
+    );
   }
 }
 
-export async function updateArtist(id, newName) {
+export async function updateInvoice(id, newData) {
   if (!db) throw new Error("❌ Database not loaded yet");
 
   if (Capacitor.getPlatform() === "web") {
-    db.run(`UPDATE Artist SET Name = ? WHERE ArtistId = ?`, [newName, id]);
+    db.run(`UPDATE Invoice SET InvoiceId = ? , CustomerId = ?, InvoiceDate = ?, BillingAddress = ?, BillingCity = ?, BillingState = ?, BillingCountry = ?, BillingPostalCode = ?, Total = ? WHERE InvoiceId = ?`, [
+      newData.InvoiceId,
+      newData.CustomerId,
+      newData.InvoiceDate,
+      newData.BillingAddress,
+      newData.BillingCity,
+      newData.BillingState,
+      newData.BillingCountry,
+      newData.BillingPostalCode,
+      newData.Total,
+      id
+    ]);
     await saveToIndexedDB(db.export());
   } else {
     await db.run(`UPDATE Artist SET Name = ? WHERE ArtistId = ?`, [newName, id]);
   }
 }
 
-export async function deleteArtist(id) {
+export async function deleteInvoice(id) {
   if (!db) throw new Error("❌ Database not loaded yet");
 
   if (Capacitor.getPlatform() === "web") {
-    db.run(`DELETE FROM Artist WHERE ArtistId = ?`, [id]);
+    db.run(`DELETE FROM Invoice WHERE InvoiceId = ?`, [id]);
     await saveToIndexedDB(db.export());
   } else {
-    await db.run(`DELETE FROM Artist WHERE ArtistId = ?`, [id]);
+    await db.run(`DELETE FROM Invoice WHERE InvoiceId = ?`, [id]);
   }
 }
 
@@ -210,6 +247,57 @@ export async function getLastInvoiceDate() {
     return res.values.length > 0 ? res.values[0].InvoiceDate : null;
   }
 }
+
+
+export async function syncInvoicesList(invoices) {
+  if (!db) throw new Error("❌ Database not loaded yet");
+
+  for (const record of invoices) {
+    let exists = false;
+    let existingInvoice = null;
+
+    if (Capacitor.getPlatform() === "web") {
+      const res = db.exec(`SELECT * FROM Invoice WHERE InvoiceId = ?`, [record.InvoiceId]);
+      exists = res.length > 0 && res[0].values.length > 0;
+      if (exists) {
+        const row = res[0].values[0];
+        existingInvoice = {
+          InvoiceId: row[0],
+          CustomerId: row[1],
+          InvoiceDate: row[2],
+          BillingAddress: row[3],
+          BillingCity: row[4],
+          BillingState: row[5],
+          BillingCountry: row[6],
+          BillingPostalCode: row[7],
+          Total: row[8],
+        };
+      }
+    } else {
+      const res = await db.query(`SELECT * FROM Invoice WHERE InvoiceId = ?`, [record.InvoiceId]);
+      exists = res.values.length > 0;
+      existingInvoice = exists ? res.values[0] : null;
+    }
+
+    if (!exists) {
+    
+      await insertInvoice(record);
+    } else {
+      if (!existingInvoice.BillingState || existingInvoice.BillingState.trim() === "") {
+       
+        await updateInvoice(record.InvoiceId, record);
+      } else {
+        
+        await deleteInvoice(record.InvoiceId);
+      }
+    }
+  }
+
+  if (Capacitor.getPlatform() === "web") {
+    await saveToIndexedDB(db.export());
+  }
+}
+
 
 // --- درج رکورد جدید در Invoice ---
 async function insertInvoice(record) {
